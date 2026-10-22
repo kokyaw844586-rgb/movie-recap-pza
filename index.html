@@ -1,1 +1,224 @@
 
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recap Studio AI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#131420;color:#f4f2ff;font-family:Arial,sans-serif}
+header{padding:22px 18px;background:#1d1c30;border-bottom:1px solid #39364c}
+h1{font-size:25px;margin:0 0 8px}
+p{line-height:1.7;color:#c4c2d5}
+main{max-width:700px;margin:auto;padding:18px}
+.card{background:#1d1e2d;border:1px solid #39394e;border-radius:18px;padding:18px;margin-bottom:18px}
+h2{font-size:19px;margin-top:0}
+label{display:block;margin:13px 0 7px;color:#d7d1f5}
+input,textarea,select{width:100%;padding:13px;border-radius:10px;border:1px solid #47465e;background:#121321;color:white;font-size:16px}
+textarea{min-height:130px;resize:vertical}
+button{padding:12px 15px;border:0;border-radius:10px;background:#b8a5ff;color:#19152a;font-weight:bold;font-size:15px;cursor:pointer}
+button:active{opacity:.8}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.secondary{background:#333349;color:white}
+.danger{background:#59303e;color:#ffdce4}
+.item{background:#28283b;border-radius:12px;padding:12px;margin-top:10px;overflow-wrap:anywhere}
+.small{font-size:12px;color:#aaa7c2}
+.status{color:#9de4ce}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎬 Recap Studio AI</h1>
+  <div class="small">YOUR PERSONAL MOVIE RECAP STUDIO</div>
+</header>
+
+<main>
+<section class="card">
+  <h2>🔑 API Key Manager</h2>
+  <p>ကိုယ်ပိုင် API Key များကို ထည့်ပြီး အသုံးပြုမည့် Key ကို ရွေးချယ်ပါ။</p>
+  <label for="keyName">Key အမည်</label>
+  <input id="keyName" placeholder="ဥပမာ - My AI Key 1">
+  <label for="keyValue">API Key</label>
+  <input id="keyValue" type="password" autocomplete="off"
+  placeholder="API Key ကို ဒီမှာထည့်ပါ">
+  <div class="actions">
+    <button onclick="addKey()">＋ Key ထည့်မယ်</button>
+    <button class="secondary" onclick="toggleKey()">Key ပြ/ဖျောက်</button>
+  </div>
+  <div id="keyList"></div>
+  <p class="small">သတိ: ဤ Demo သည် Key များကို Browser localStorage ထဲတွင် သိမ်းထားသည်။ အခြားသူသုံးနိုင်သော ဖုန်း၊ Shared Browser တွင် Key အစစ်မထည့်ပါနှင့်။</p>
+</section>
+
+<section class="card">
+  <h2>🎥 Movie Recap Creator</h2>
+  <label for="movie">ရုပ်ရှင်အမည်</label>
+  <input id="movie" placeholder="ဥပမာ - Avatar">
+  <label for="details">ဇာတ်လမ်းအချက်အလက်</label>
+  <textarea id="details" placeholder="သိထားတဲ့ ဇာတ်လမ်းအချက်အလက် သို့မဟုတ် ကိုယ်ရေးထားတဲ့ အကျဉ်းချုပ်ကို ထည့်ပါ။"></textarea>
+  <label for="style">ဇာတ်ကြောင်းပြောပုံ</label>
+  <select id="style">
+    <option>စိတ်ဝင်စားဖွယ် မြန်မာဇာတ်ကြောင်းပြောသံ</option>
+    <option>ဝမ်းနည်းဖွယ် ဇာတ်ကြောင်းပြောသံ</option>
+    <option>သည်းထိတ်ရင်ဖို ဇာတ်ကြောင်းပြောသံ</option>
+    <option>ရိုးရှင်းသော ဇာတ်လမ်းအကျဉ်း</option>
+  </select>
+  <label for="duration">ဗီဒီယိုကြာချိန်</label>
+  <select id="duration">
+    <option>၁ မိနစ်</option>
+    <option>၃ မိနစ်</option>
+    <option>၅ မိနစ်</option>
+    <option>၁၀ မိနစ်</option>
+  </select>
+  <div class="actions">
+    <button onclick="makeScript()">ဇာတ်ကြောင်းစာသား ဖန်တီးမယ်</button>
+  </div>
+  <div id="result" style="margin-top:16px"></div>
+</section>
+</main>
+
+<script>
+const STORE = "recap_studio_demo_keys_v1";
+let keys = [];
+let activeId = "";
+
+try {
+  keys = JSON.parse(localStorage.getItem(STORE) || "[]");
+  activeId = localStorage.getItem(STORE + "_active") || "";
+} catch(e) {
+  keys = [];
+}
+
+function saveKeys(){
+  localStorage.setItem(STORE, JSON.stringify(keys));
+  localStorage.setItem(STORE + "_active", activeId);
+  renderKeys();
+}
+
+function addKey(){
+  const name = document.getElementById("keyName").value.trim();
+  const value = document.getElementById("keyValue").value.trim();
+
+  if(!name || !value){
+    alert("Key အမည်နဲ့ API Key နှစ်ခုလုံး ထည့်ပါ။");
+    return;
+  }
+
+  keys.push({
+    id: String(Date.now()) + Math.random().toString(36).slice(2,7),
+    name, value
+  });
+  activeId = keys[keys.length-1].id;
+  document.getElementById("keyName").value = "";
+  document.getElementById("keyValue").value = "";
+  saveKeys();
+}
+
+function toggleKey(){
+  const input = document.getElementById("keyValue");
+  input.type = input.type === "password" ? "text" : "password";
+}
+
+function chooseKey(id){
+  activeId = id;
+  saveKeys();
+}
+
+function deleteKey(id){
+  if(!confirm("ဒီ Key ကို ဖျက်မှာ သေချာပါသလား။")) return;
+  keys = keys.filter(k => k.id !== id);
+  if(activeId === id) activeId = keys.length ? keys[0].id : "";
+  saveKeys();
+}
+
+function renderKeys(){
+  const box = document.getElementById("keyList");
+  box.replaceChildren();
+
+  keys.forEach(k => {
+    const item = document.createElement("div");
+    item.className = "item";
+    const title = document.createElement("strong");
+    title.textContent = k.name + (k.id === activeId ? " ✓ ACTIVE" : "");
+    const masked = document.createElement("p");
+    masked.className = "small";
+    masked.textContent = "••••••••••••";
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const selectBtn = document.createElement("button");
+    selectBtn.className = "secondary";
+    selectBtn.textContent = "ဒီ Key ကို ရွေးမယ်";
+    selectBtn.onclick = () => chooseKey(k.id);
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "danger";
+    delBtn.textContent = "ဖျက်မယ်";
+    delBtn.onclick = () => deleteKey(k.id);
+
+    actions.append(selectBtn, delBtn);
+    item.append(title, masked, actions);
+    box.append(item);
+  });
+
+  if(!keys.length){
+    const empty = document.createElement("p");
+    empty.textContent = "API Key မထည့်ရသေးပါ။";
+    box.append(empty);
+  }
+}
+
+function makeScript(){
+  const movie = document.getElementById("movie").value.trim();
+  const details = document.getElementById("details").value.trim();
+  const style = document.getElementById("style").value;
+  const duration = document.getElementById("duration").value;
+
+  if(!movie || !details){
+    alert("ရုပ်ရှင်အမည်နဲ့ ဇာတ်လမ်းအချက်အလက် ထည့်ပေးပါ။");
+    return;
+  }
+
+  const prompt =
+`သင်သည် မြန်မာ Movie Recap ဇာတ်ကြောင်းပြောသူဖြစ်သည်။
+ရုပ်ရှင်အမည်: ${movie}
+ပုံစံ: ${style}
+ကြာချိန်: ${duration}
+
+အောက်ပါအချက်အလက်ကို အခြေခံပြီး မူရင်းစကားလုံးဖြင့်
+စိတ်ဝင်စားဖွယ် ဇာတ်ကြောင်းပြောစာသား ရေးပေးပါ။
+မသိသောဖြစ်ရပ်များကို မဖန်တီးပါနှင့်။
+
+ဇာတ်လမ်းအချက်အလက်:
+${details}`;
+
+  const box = document.getElementById("result");
+  box.replaceChildren();
+
+  const heading = document.createElement("h3");
+  heading.textContent = "Recap Prompt";
+  const note = document.createElement("p");
+  note.className = "small";
+  note.textContent = "ဒီစာသားက AI အတွက် Prompt ဖြစ်ပြီး AI က ထုတ်ပေးထားတဲ့ Recap မဟုတ်သေးပါ။";
+  const output = document.createElement("textarea");
+  output.value = prompt;
+  output.style.minHeight = "230px";
+  const copy = document.createElement("button");
+  copy.textContent = "Prompt ကို Copy ကူးမယ်";
+  copy.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(output.value);
+      alert("Copy ကူးပြီးပါပြီ။");
+    } catch(e) {
+      output.select();
+      alert("စာသားကို Select လုပ်ထားပါပြီ။ Copy ကို ရွေးပါ။");
+    }
+  };
+
+  box.append(heading, note, output, copy);
+}
+
+renderKeys();
+</script>
+</body>
+</html>
